@@ -47,7 +47,11 @@ def _extract_json_payload(raw_text: str) -> str:
     return text[start:end + 1]
 
 
-def generate_json(client: genai.Client, prompt: str) -> dict[str, Any]:
+def generate_json(
+    client: genai.Client,
+    prompt: str,
+    list_key: str | None = None,
+) -> dict[str, Any]:
     response = client.models.generate_content(
         model=settings.GEMINI_MODEL,
         contents=prompt,
@@ -55,6 +59,11 @@ def generate_json(client: genai.Client, prompt: str) -> dict[str, Any]:
     )
 
     payload = json.loads(_extract_json_payload(response.text or ""))
+
+    if isinstance(payload, list):
+        if list_key is None:
+            raise ValueError(f"Expected JSON object from Gemini, received: {type(payload).__name__}")
+        return {list_key: payload}
 
     if not isinstance(payload, dict):
         raise ValueError(f"Expected JSON object from Gemini, received: {type(payload).__name__}")

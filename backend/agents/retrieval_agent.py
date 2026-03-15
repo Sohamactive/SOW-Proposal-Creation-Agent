@@ -45,7 +45,7 @@ class RetrievalAgent:
             project_domain=domain
         )
 
-        result = generate_json(client, prompt)
+        result = generate_json(client, prompt, list_key="queries")
 
         queries = [query for query in result.get("queries", []) if isinstance(query, str) and query.strip()]
 

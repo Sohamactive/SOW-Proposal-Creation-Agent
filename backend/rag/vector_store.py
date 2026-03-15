@@ -8,6 +8,7 @@ from qdrant_client.models import (
     MatchValue,
 )
 
+import time
 from typing import List, Dict
 from backend.config import settings
 
@@ -16,18 +17,8 @@ class VectorStore:
 
     def __init__(self):
 
-        self.client = QdrantClient(url=settings.QDRANT_URL)
-        self.collection_name = settings.QDRANT_COLLECTION
-
-import time
-        self._create_collection()
-
-    def _create_collection(self):
-
-        collections = self.client.get_collections().collections
         self.client = None
-
-        if self.collection_name not in names:
+        self.collection_name = settings.QDRANT_COLLECTION
 
     def _get_client(self):
 
@@ -59,7 +50,16 @@ import time
                 if attempt == 4:
                     raise
                 time.sleep(2)
-            self.client.create_collection(
+
+    def add_documents(
+        self,
+        embeddings: List[List[float]],
+        texts: List[str],
+        metadata: List[Dict]
+    ):
+
+        self._create_collection()
+
         points = []
 
         for idx, (embedding, text, meta) in enumerate(
@@ -67,9 +67,6 @@ import time
         ):
 
             points.append(
-
-        self._create_collection()
-
                 PointStruct(
                     id=idx,
                     vector=embedding,
@@ -80,27 +77,27 @@ import time
                 )
             )
 
-        self.client.upsert(
+        self._get_client().upsert(
             collection_name=self.collection_name,
             points=points,
             wait=True
         )
 
     def search(self, query_embedding: List[float], top_k: int = None): #type: ignore
-        self._get_client().upsert(
+
+        self._create_collection()
+
         if top_k is None:
             top_k = settings.RETRIEVAL_TOP_K
 
-        results = self.client.query_points(
+        results = self._get_client().query_points(
             collection_name=self.collection_name,
             query=query_embedding,
-
-        self._create_collection()
             with_payload=True,
             limit=top_k
         ).points
 
-        results = self._get_client().query_points(
+        return results
 
     def filtered_search(
         self,
