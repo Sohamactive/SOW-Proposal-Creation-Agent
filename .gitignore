@@ -1,4 +1,12 @@
 .env
 .venv/
-qdrant_storage/
 .vscode/
+qdrant_storage/
+
+__pycache__/
+*.py[cod]
+
+generated_proposals/
+backend/sample_docs/
+
+*.log
