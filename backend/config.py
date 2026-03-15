@@ -16,6 +16,16 @@ class Settings:
     QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
     QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "knowledge_base")
 
+    # CORS
+    CORS_ALLOW_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ALLOW_ORIGINS",
+            "http://127.0.0.1:8000,http://localhost:8000"
+        ).split(",")
+        if origin.strip()
+    ]
+
     # Embeddings
     EMBEDDING_DIMENSION = 768
 

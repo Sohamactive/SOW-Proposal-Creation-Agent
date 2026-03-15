@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import shutil
 import os
+from pathlib import Path
 from uuid import uuid4
 
 from backend.rag.ingestion import ingest_document
@@ -17,11 +18,26 @@ exporter = ProposalExporter()
 router = APIRouter()
 
 UPLOAD_FOLDER = "backend/sample_docs"
+ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".docx"}
 
 
 class ProposalRequest(BaseModel):
     description: str = ""
     project_docs: str = ""
+
+
+def _sanitize_upload_filename(file: UploadFile) -> str:
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Uploaded file must have a filename")
+
+    safe_name = Path(file.filename).name
+    extension = Path(safe_name).suffix.lower()
+
+    if extension not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Only .pdf and .docx files are supported")
+
+    return safe_name
 
 
 # KNOWLEDGE BASE DOCUMENTS
@@ -30,10 +46,8 @@ async def upload_knowledge_doc(file: UploadFile = File(...)):
 
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="Uploaded file must have a filename")
-
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    safe_name = _sanitize_upload_filename(file)
+    file_path = os.path.join(UPLOAD_FOLDER, safe_name)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -59,10 +73,8 @@ async def upload_project_doc(file: UploadFile = File(...)):
 
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="Uploaded file must have a filename")
-
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    safe_name = _sanitize_upload_filename(file)
+    file_path = os.path.join(UPLOAD_FOLDER, safe_name)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -93,7 +105,6 @@ async def generate_proposal(data: ProposalRequest):
         "review": result["review"],
         "files": {
             "docx_name": docx_name,
-            "docx_path": docx_path,
             "docx_download_url": f"/download-proposal/{docx_name}"
         }
     }
@@ -103,6 +114,9 @@ async def generate_proposal(data: ProposalRequest):
 async def download_proposal(filename: str):
 
     safe_name = os.path.basename(filename)
+    if Path(safe_name).suffix.lower() != ".docx":
+        raise HTTPException(status_code=400, detail="Only .docx downloads are allowed")
+
     file_path = os.path.join(settings.EXPORT_FOLDER, safe_name)
 
     if not os.path.exists(file_path):
