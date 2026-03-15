@@ -64,15 +64,74 @@ Create a `.env` file in the project root with:
 GEMINI_API_KEY=your_api_key_here
 ```
 
-## Start Qdrant
+## Docker Compose Setup
 
-The backend expects Qdrant at `http://localhost:6333`.
+This project now includes:
 
-If you use Docker:
+- [Dockerfile](Dockerfile)
+- [docker-compose.yml](docker-compose.yml)
+- [.dockerignore](.dockerignore)
+
+The Compose setup runs:
+
+- `backend` on `http://127.0.0.1:8000`
+- `qdrant` on `http://127.0.0.1:6333`
+
+### 1. Create `.env`
+
+Add at least:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Optional overrides:
+
+```env
+QDRANT_COLLECTION=knowledge_base
+EXPORT_FOLDER=/app/generated_proposals
+```
+
+### 2. Start with Docker Compose
 
 ```powershell
-docker run -p 6333:6333 -v ${PWD}/qdrant_storage:/qdrant/storage qdrant/qdrant
+docker compose up --build
 ```
+
+### 3. Open the app
+
+Frontend:
+
+```text
+http://127.0.0.1:8000/frontend/index.html
+```
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 4. Stop the stack
+
+```powershell
+docker compose down
+```
+
+If you want to remove persisted Qdrant data too:
+
+```powershell
+docker compose down -v
+```
+
+### Persisted Data
+
+Docker Compose keeps these folders mounted from your repo:
+
+- `./qdrant_storage` for vector data
+- `./generated_proposals` for exported proposal files
+- `./backend/sample_docs` for uploaded documents
 
 If Qdrant is not running, knowledge-base ingestion and retrieval will fail.
 
@@ -84,6 +143,8 @@ From the project root:
 .venv\Scripts\Activate.ps1
 uvicorn backend.main:app --reload
 ```
+
+For the local non-Docker setup, Qdrant still needs to be available at `http://localhost:6333` unless you override `QDRANT_URL` in `.env`.
 
 Open the frontend in the browser:
 
@@ -153,3 +214,12 @@ backend/sample_docs/
 - Gemini free-tier quotas can stop the pipeline with `429 RESOURCE_EXHAUSTED` if too many requests are made.
 - Knowledge-base retrieval is only useful after documents have been indexed successfully.
 - The frontend is served by FastAPI. There is no separate frontend dev server in the current setup.
+- In Docker Compose, the backend connects to Qdrant through the internal service URL `http://qdrant:6333`.
+
+## Submission Notes
+
+For the required setup documentation submission, point reviewers to:
+
+- [README.md](README.md) for setup and run steps
+- [docker-compose.yml](docker-compose.yml) for the container stack
+- [Dockerfile](Dockerfile) for the backend container image

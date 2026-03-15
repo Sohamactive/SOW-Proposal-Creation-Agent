@@ -1,0 +1,9 @@
+.git
+.gitignore
+.venv
+.vscode
+.env
+qdrant_storage
+generated_proposals
+__pycache__
+*.py[cod]
