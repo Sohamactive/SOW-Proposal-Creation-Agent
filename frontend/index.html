@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AI SOW Proposal Generator</title>
+	<link rel="stylesheet" href="/frontend/style.css">
+</head>
+<body>
+	<main class="page-shell">
+		<section class="hero-panel">
+			<p class="eyebrow">AI SOW / Proposal Generator</p>
+			<h1>Upload context, generate a proposal, and download the DOCX.</h1>
+			<p class="hero-copy">
+				Provide a project description, attach current project documents, index knowledge-base references,
+				and let the backend generate a structured proposal draft.
+			</p>
+		</section>
+
+		<section class="workspace-grid">
+			<div class="card form-card">
+				<div class="section-head">
+					<h2>Project Input</h2>
+					<p>Use text, files, or both.</p>
+				</div>
+
+				<label class="field-label" for="project_input">Project description</label>
+				<textarea id="project_input" placeholder="Describe the client problem, goals, scope, and constraints..."></textarea>
+
+				<div class="upload-block">
+					<div>
+						<h3>Project Document</h3>
+						<p>RFP, requirements, or meeting notes for the current proposal.</p>
+					</div>
+					<input type="file" id="projectDoc" accept=".pdf,.docx">
+					<button id="uploadProjectDocBtn" type="button">Upload Project Document</button>
+					<p id="projectDocStatus" class="status-text muted">No project document uploaded yet.</p>
+				</div>
+
+				<div class="upload-block">
+					<div>
+						<h3>Knowledge Base Document</h3>
+						<p>Upload prior proposals, architecture docs, or reusable references into the vector store.</p>
+					</div>
+					<input type="file" id="knowledgeDoc" accept=".pdf,.docx">
+					<button id="uploadKnowledgeDocBtn" type="button">Upload Knowledge Document</button>
+					<p id="knowledgeDocStatus" class="status-text muted">No knowledge-base document uploaded yet.</p>
+				</div>
+
+				<div class="action-row">
+					<button id="generateProposalBtn" class="primary-action" type="button">Generate Proposal</button>
+					<a id="downloadDocxLink" class="download-link hidden" href="#" download>Download DOCX</a>
+				</div>
+			</div>
+
+			<div class="card output-card">
+				<div class="section-head">
+					<h2>Proposal Output</h2>
+					<p>Preview the generated proposal and review status.</p>
+				</div>
+
+				<div id="loader" class="loader hidden" aria-live="polite">
+					<div class="spinner"></div>
+					<div>
+						<strong id="loaderTitle">Working...</strong>
+						<p id="loaderText">The backend is processing your request.</p>
+					</div>
+				</div>
+
+				<div id="messageBanner" class="message-banner hidden"></div>
+
+				<div class="meta-panel">
+					<div>
+						<span class="meta-label">Project doc extracted</span>
+						<strong id="projectDocExtracted">No</strong>
+					</div>
+					<div>
+						<span class="meta-label">Review status</span>
+						<strong id="reviewStatus">Not generated</strong>
+					</div>
+				</div>
+
+				<div id="reviewSummary" class="review-summary empty-state">
+					Review feedback will appear here.
+				</div>
+
+				<div id="proposal_output" class="proposal-preview empty-state">
+					Proposal output will appear here.
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<script src="/frontend/app.js"></script>
+</body>
+</html>
