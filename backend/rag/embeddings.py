@@ -1,16 +1,16 @@
 # backend/rag/embeddings.py
 
 from typing import List, cast
-from google import genai
 from google.genai import types
 from google.genai.types import ContentListUnion
 import numpy as np
 
 from backend.config import settings
+from backend.genai_client import create_genai_client
 
 
 # Initialize Gemini client
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+client = create_genai_client()
 
 
 def _normalize(vec: List[float]) -> List[float]:

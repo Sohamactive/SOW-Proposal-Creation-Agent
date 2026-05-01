@@ -11,6 +11,7 @@ class Settings:
     # Gemini
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_TIMEOUT_MS = int(os.getenv("GEMINI_TIMEOUT_MS", "120000"))
 
     # Qdrant
     QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
@@ -38,6 +39,9 @@ class Settings:
 
     # Export
     EXPORT_FOLDER = os.getenv("EXPORT_FOLDER", "./generated_proposals")
+
+    # Jobs
+    PROPOSAL_JOB_TIMEOUT_SECONDS = int(os.getenv("PROPOSAL_JOB_TIMEOUT_SECONDS", "600"))
 
 
 settings = Settings()

@@ -1,13 +1,14 @@
 # backend/agents/delivery_agent.py
 
-from google import genai
+
 
 from backend.config import settings
 from backend.agents.project_state import ProjectState
 from backend.agents.llm_utils import generate_json
+from backend.genai_client import create_genai_client
 
 
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+client = create_genai_client()
 
 
 PROMPT_TEMPLATE = """
@@ -63,3 +64,4 @@ class DeliveryPlanningAgent:
         })
 
         return result
+

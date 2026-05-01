@@ -3,12 +3,13 @@
 import json
 from typing import Dict, Any
 
-from google import genai
+
 
 from backend.config import settings
+from backend.genai_client import create_genai_client
 
 
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+client = create_genai_client()
 
 
 CLASSIFICATION_PROMPT = """
@@ -73,3 +74,4 @@ def classify_document(text: str) -> Dict[str, Any]:
         result = json.loads(raw[start:end])
 
     return result
+

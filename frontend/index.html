@@ -1,96 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>AI SOW Proposal Generator</title>
-	<link rel="stylesheet" href="/frontend/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SOW Proposal Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/frontend/style.css">
 </head>
 <body>
-	<main class="page-shell">
-		<section class="hero-panel">
-			<p class="eyebrow">AI SOW / Proposal Generator</p>
-			<h1>Upload context, generate a proposal, and download the DOCX.</h1>
-			<p class="hero-copy">
-				Provide a project description, attach current project documents, index knowledge-base references,
-				and let the backend generate a structured proposal draft.
-			</p>
-		</section>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <p class="app-mark">SOW Intelligence</p>
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+                <span id="themeIcon" role="img" aria-label="Switch theme">&#9789;</span>
+            </button>
+        </div>
+    </header>
 
-		<section class="workspace-grid">
-			<div class="card form-card">
-				<div class="section-head">
-					<h2>Project Input</h2>
-					<p>Use text, files, or both.</p>
-				</div>
+    <main class="page-shell">
+        <section class="hero" aria-labelledby="hero-title">
+            <p class="eyebrow">AI Document Intelligence</p>
+            <h1 id="hero-title">Turn briefs into professional proposals</h1>
+            <p class="hero-subtext">Capture project context, run a multi-step AI workflow, and export a client-ready Statement of Work with auditable review signals.</p>
+        </section>
 
-				<label class="field-label" for="project_input">Project description</label>
-				<textarea id="project_input" placeholder="Describe the client problem, goals, scope, and constraints..."></textarea>
+        <section class="workspace-grid" aria-label="Proposal workspace">
+            <section class="card form-card" aria-labelledby="input-card-title">
+                <div class="card-head">
+                    <h2 id="input-card-title">Project Input</h2>
+                    <p>Provide description and documents for high-fidelity generation.</p>
+                </div>
 
-				<div class="upload-block">
-					<div>
-						<h3>Project Document</h3>
-						<p>RFP, requirements, or meeting notes for the current proposal.</p>
-					</div>
-					<input type="file" id="projectDoc" accept=".pdf,.docx">
-					<button id="uploadProjectDocBtn" type="button">Upload Project Document</button>
-					<p id="projectDocStatus" class="status-text muted">No project document uploaded yet.</p>
-				</div>
+                <form class="input-form" novalidate>
+                    <div class="field-group">
+                        <label for="project_input">Project description</label>
+                        <textarea id="project_input" placeholder="Describe scope, deliverables, constraints, timeline, and assumptions."></textarea>
+                    </div>
 
-				<div class="upload-block">
-					<div>
-						<h3>Knowledge Base Document</h3>
-						<p>Upload prior proposals, architecture docs, or reusable references into the vector store.</p>
-					</div>
-					<input type="file" id="knowledgeDoc" accept=".pdf,.docx">
-					<button id="uploadKnowledgeDocBtn" type="button">Upload Knowledge Document</button>
-					<p id="knowledgeDocStatus" class="status-text muted">No knowledge-base document uploaded yet.</p>
-				</div>
+                    <section class="field-group" aria-labelledby="project-doc-title">
+                        <div class="upload-head">
+                            <h3 id="project-doc-title">Project Document</h3>
+                            <p>Upload RFP, requirements, or meeting notes.</p>
+                        </div>
+                        <label for="projectDoc" class="upload-zone">
+                            <span class="upload-icon" role="img" aria-label="Upload file">&#8679;</span>
+                            <span class="upload-text">Click to upload or drag and drop</span>
+                            <span class="upload-subtext">PDF or DOCX</span>
+                        </label>
+                        <input type="file" id="projectDoc" class="visually-hidden-file" accept=".pdf,.docx">
+                        <button id="uploadProjectDocBtn" class="button-secondary" type="button">Upload Project Document</button>
+                        <p id="projectDocStatus" class="status-text muted">No project document uploaded.</p>
+                    </section>
 
-				<div class="action-row">
-					<button id="generateProposalBtn" class="primary-action" type="button">Generate Proposal</button>
-					<a id="downloadDocxLink" class="download-link hidden" href="#" download>Download DOCX</a>
-				</div>
-			</div>
+                    <section class="field-group" aria-labelledby="knowledge-doc-title">
+                        <div class="upload-head">
+                            <h3 id="knowledge-doc-title">Knowledge Base Document</h3>
+                            <p>Upload prior SOWs or reusable implementation references.</p>
+                        </div>
+                        <label for="knowledgeDoc" class="upload-zone">
+                            <span class="upload-icon" role="img" aria-label="Upload file">&#8679;</span>
+                            <span class="upload-text">Click to upload or drag and drop</span>
+                            <span class="upload-subtext">PDF or DOCX</span>
+                        </label>
+                        <input type="file" id="knowledgeDoc" class="visually-hidden-file" accept=".pdf,.docx">
+                        <button id="uploadKnowledgeDocBtn" class="button-secondary" type="button">Upload Knowledge Document</button>
+                        <p id="knowledgeDocStatus" class="status-text muted">No knowledge-base document uploaded.</p>
+                    </section>
 
-			<div class="card output-card">
-				<div class="section-head">
-					<h2>Proposal Output</h2>
-					<p>Preview the generated proposal and review status.</p>
-				</div>
+                    <div class="action-row">
+                        <button id="generateProposalBtn" class="button-primary" type="button">Generate Proposal</button>
+                        <a id="downloadDocxLink" class="button-download hidden" href="#" download>
+                            <span role="img" aria-label="Download document">&#8595;</span>
+                            Download DOCX
+                        </a>
+                    </div>
+                </form>
+            </section>
 
-				<div id="loader" class="loader hidden" aria-live="polite">
-					<div class="spinner"></div>
-					<div>
-						<strong id="loaderTitle">Working...</strong>
-						<p id="loaderText">The backend is processing your request.</p>
-					</div>
-				</div>
+            <section class="card output-card" aria-labelledby="output-card-title">
+                <div class="card-head output-head">
+                    <h2 id="output-card-title">Proposal Output</h2>
+                    <p>Preview structured proposal sections and QA signals.</p>
+                </div>
 
-				<div id="messageBanner" class="message-banner hidden"></div>
+                <div id="messageBanner" class="message-banner hidden" role="status" aria-live="polite"></div>
 
-				<div class="meta-panel">
-					<div>
-						<span class="meta-label">Project doc extracted</span>
-						<strong id="projectDocExtracted">No</strong>
-					</div>
-					<div>
-						<span class="meta-label">Review status</span>
-						<strong id="reviewStatus">Not generated</strong>
-					</div>
-				</div>
+                <section class="meta-panel" aria-label="Generation metadata">
+                    <div class="meta-item">
+                        <span class="meta-label">Project doc extracted</span>
+                        <strong id="projectDocExtracted">No</strong>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Review status</span>
+                        <strong id="reviewStatus">Pending</strong>
+                    </div>
+                </section>
 
-				<div id="reviewSummary" class="review-summary empty-state">
-					Review feedback will appear here.
-				</div>
+                <section id="loader" class="pipeline-status hidden" aria-live="polite" aria-label="Generation progress">
+                    <ol id="pipelineSteps" class="pipeline-steps">
+                        <li class="pipeline-step" data-step="0"><span class="step-mark" aria-hidden="true"></span><span class="step-label">Reading documents</span></li>
+                        <li class="pipeline-step" data-step="1"><span class="step-mark" aria-hidden="true"></span><span class="step-label">Analyzing requirements</span></li>
+                        <li class="pipeline-step" data-step="2"><span class="step-mark" aria-hidden="true"></span><span class="step-label">Generating proposal</span></li>
+                        <li class="pipeline-step" data-step="3"><span class="step-mark" aria-hidden="true"></span><span class="step-label">Quality review</span></li>
+                        <li class="pipeline-step" data-step="4"><span class="step-mark" aria-hidden="true"></span><span class="step-label">Done</span></li>
+                    </ol>
+                    <div class="pipeline-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div id="pipelineProgress" class="pipeline-bar"></div>
+                    </div>
+                </section>
 
-				<div id="proposal_output" class="proposal-preview empty-state">
-					Proposal output will appear here.
-				</div>
-			</div>
-		</section>
-	</main>
+                <section id="reviewSummary" class="review-summary empty-state-panel" aria-label="Quality review summary">
+                    <div class="empty-review">
+                        <p class="empty-review-title">QA summary pending</p>
+                        <p class="empty-review-copy">Review checks appear after generation.</p>
+                    </div>
+                </section>
 
-	<script src="/frontend/app.js"></script>
+                <section id="proposal_output" class="proposal-preview empty-state-panel" aria-label="Proposal preview">
+                    <div class="empty-state-art" role="img" aria-label="Document placeholder">
+                        <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true" focusable="false">
+                            <path d="M18 6h20l12 12v40H18z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+                            <path d="M38 6v12h12" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+                            <path d="M26 32h16M26 40h16M26 48h10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                        </svg>
+                    </div>
+                    <h3>Your proposal will appear here</h3>
+                    <p>Fill in the details and click Generate to begin.</p>
+                </section>
+            </section>
+        </section>
+    </main>
+
+    <script src="/frontend/app.js"></script>
 </body>
 </html>

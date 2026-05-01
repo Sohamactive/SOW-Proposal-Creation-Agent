@@ -42,6 +42,7 @@ requirements.txt
 - Python 3.13
 - Qdrant running locally on `http://localhost:6333`
 - A valid Gemini API key
+- LaTeX compiler (`pdflatex`) available on PATH for PDF export via PyLaTeX
 
 ## Environment Setup
 
@@ -84,6 +85,8 @@ Add at least:
 ```env
 GEMINI_API_KEY=your_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
+GEMINI_TIMEOUT_MS=120000
+PROPOSAL_JOB_TIMEOUT_SECONDS=600
 ```
 
 Optional overrides:
@@ -178,6 +181,12 @@ The frontend includes a loading state during document upload, indexing, and prop
 
 - `POST /generate-proposal`
   - Generates the proposal from description plus extracted project document text.
+
+- `POST /generate-proposal-job`
+  - Starts async generation job and returns a job ID for progress polling.
+
+- `GET /proposal-job/{job_id}`
+  - Returns current pipeline step, progress, status, and final result/error.
 
 - `GET /download-proposal/{filename}`
   - Downloads a generated `.docx` proposal.

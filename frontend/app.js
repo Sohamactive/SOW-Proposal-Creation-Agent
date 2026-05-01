@@ -1,4 +1,7 @@
 const API_BASE = window.location.origin;
+const JOB_POLL_INTERVAL_MS = 1600;
+const JOB_POLL_MAX_RETRIES = 20;
+const JOB_MAX_WAIT_MS = 10 * 60 * 1000;
 
 let extractedProjectText = "";
 
@@ -13,12 +16,35 @@ const knowledgeDocStatus = document.getElementById("knowledgeDocStatus");
 const proposalOutput = document.getElementById("proposal_output");
 const messageBanner = document.getElementById("messageBanner");
 const loader = document.getElementById("loader");
-const loaderTitle = document.getElementById("loaderTitle");
-const loaderText = document.getElementById("loaderText");
 const reviewStatus = document.getElementById("reviewStatus");
 const projectDocExtracted = document.getElementById("projectDocExtracted");
 const downloadDocxLink = document.getElementById("downloadDocxLink");
 const reviewSummary = document.getElementById("reviewSummary");
+const pipelineProgress = document.getElementById("pipelineProgress");
+const pipelineTrack = loader.querySelector(".pipeline-track");
+const pipelineSteps = Array.from(document.querySelectorAll(".pipeline-step"));
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+const htmlRoot = document.documentElement;
+
+const proposalEmptyStateMarkup = `
+    <div class="empty-state-art" role="img" aria-label="Document placeholder">
+        <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true" focusable="false">
+            <path d="M18 6h20l12 12v40H18z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+            <path d="M38 6v12h12" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+            <path d="M26 32h16M26 40h16M26 48h10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+        </svg>
+    </div>
+    <h3>Your proposal will appear here</h3>
+    <p>Fill in the details and click Generate to begin.</p>
+`;
+
+const reviewEmptyStateMarkup = `
+    <div class="empty-review">
+        <p class="empty-review-title">QA summary pending</p>
+        <p class="empty-review-copy">Review checks appear after generation.</p>
+    </div>
+`;
 
 
 function escapeHtml(value) {
@@ -35,6 +61,90 @@ function formatLabel(key) {
     return key
         .replaceAll("_", " ")
         .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+
+function normalizeStatusClass(status) {
+    return String(status || "pending")
+        .toLowerCase()
+        .trim()
+        .replaceAll(" ", "_");
+}
+
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+function setBusy(active) {
+    uploadProjectDocBtn.disabled = active;
+    uploadKnowledgeDocBtn.disabled = active;
+    generateProposalBtn.disabled = active;
+}
+
+
+function applyPipelineStep(stepIndex) {
+    const maxIndex = Math.max(0, pipelineSteps.length - 1);
+    const boundedIndex = Math.max(0, Math.min(stepIndex, maxIndex));
+
+    pipelineSteps.forEach((stepNode, index) => {
+        stepNode.classList.remove("active", "completed");
+
+        if (index < boundedIndex) {
+            stepNode.classList.add("completed");
+        } else if (index === boundedIndex) {
+            stepNode.classList.add("active");
+        }
+    });
+
+    const progress = maxIndex === 0 ? 0 : (boundedIndex / maxIndex) * 100;
+    pipelineProgress.style.width = `${progress}%`;
+    pipelineTrack.setAttribute("aria-valuenow", String(Math.round(progress)));
+}
+
+
+function startPipeline() {
+    loader.classList.remove("hidden");
+    applyPipelineStep(0);
+}
+
+
+function stopPipeline() {
+    loader.classList.add("hidden");
+    applyPipelineStep(0);
+}
+
+
+function updatePipelineFromJob(jobPayload) {
+    const stepIndex = Number(jobPayload.step_index || 0);
+    applyPipelineStep(stepIndex);
+
+    if (jobPayload.status === "running" && jobPayload.step_label) {
+        reviewStatus.textContent = `Running: ${jobPayload.step_label}`;
+    }
+}
+
+
+function showMessage(text, tone = "info") {
+    const icons = {
+        info: "&#9432;",
+        success: "&#10003;",
+        error: "&#10005;"
+    };
+
+    const safeTone = ["info", "success", "error"].includes(tone) ? tone : "info";
+    messageBanner.className = `message-banner ${safeTone}`;
+    messageBanner.innerHTML = `
+        <span class="banner-icon" role="img" aria-label="${safeTone}">${icons[safeTone]}</span>
+        <span>${escapeHtml(text)}</span>
+    `;
+}
+
+
+function clearMessage() {
+    messageBanner.textContent = "";
+    messageBanner.className = "message-banner hidden";
 }
 
 
@@ -101,10 +211,21 @@ function renderObject(objectValue, depth = 0, compact = false) {
 }
 
 
+function setProposalEmptyState() {
+    proposalOutput.className = "proposal-preview empty-state-panel";
+    proposalOutput.innerHTML = proposalEmptyStateMarkup;
+}
+
+
+function setReviewEmptyState() {
+    reviewSummary.className = "review-summary empty-state-panel";
+    reviewSummary.innerHTML = reviewEmptyStateMarkup;
+}
+
+
 function renderProposal(proposal) {
     if (!proposal || typeof proposal !== "object") {
-        proposalOutput.className = "proposal-preview empty-state";
-        proposalOutput.innerHTML = "Proposal output will appear here.";
+        setProposalEmptyState();
         return;
     }
 
@@ -124,18 +245,18 @@ function renderProposal(proposal) {
 
 function renderReview(review) {
     if (!review || typeof review !== "object") {
-        reviewSummary.className = "review-summary empty-state";
-        reviewSummary.textContent = "Review feedback will appear here.";
+        setReviewEmptyState();
         return;
     }
 
     const issues = Array.isArray(review.issues) ? review.issues : [];
     const suggestions = Array.isArray(review.suggestions) ? review.suggestions : [];
-    const status = review.status ? escapeHtml(review.status) : "generated";
+    const rawStatus = review.status ? escapeHtml(review.status) : "pending";
+    const normalizedStatus = normalizeStatusClass(rawStatus);
 
     reviewSummary.className = "review-summary";
     reviewSummary.innerHTML = `
-        <div class="review-pill ${status.toLowerCase()}">${status}</div>
+        <div class="review-pill ${normalizedStatus}">${rawStatus}</div>
         <div class="review-grid">
             <section>
                 <h3>Issues</h3>
@@ -150,38 +271,37 @@ function renderReview(review) {
 }
 
 
-function setLoading(active, title = "Working...", description = "The backend is processing your request.") {
-    loaderTitle.textContent = title;
-    loaderText.textContent = description;
-    loader.classList.toggle("hidden", !active);
-
-    uploadProjectDocBtn.disabled = active;
-    uploadKnowledgeDocBtn.disabled = active;
-    generateProposalBtn.disabled = active;
-}
-
-
-function showMessage(text, tone = "info") {
-    messageBanner.textContent = text;
-    messageBanner.className = `message-banner ${tone}`;
-}
-
-
-function clearMessage() {
-    messageBanner.textContent = "";
-    messageBanner.className = "message-banner hidden";
-}
-
-
 async function parseResponse(response) {
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        const detail = payload.detail || "Request failed";
+        const detail = payload.detail || payload.error || "Request failed";
         throw new Error(detail);
     }
 
     return payload;
+}
+
+
+function setTheme(theme) {
+    const nextTheme = theme === "dark" ? "dark" : "light";
+    htmlRoot.setAttribute("data-theme", nextTheme);
+    themeToggle.setAttribute("aria-label", nextTheme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    themeIcon.textContent = nextTheme === "dark" ? "\u2600" : "\u263D";
+    localStorage.setItem("sow-theme", nextTheme);
+}
+
+
+function initializeTheme() {
+    const savedTheme = localStorage.getItem("sow-theme");
+
+    if (savedTheme === "dark" || savedTheme === "light") {
+        setTheme(savedTheme);
+        return;
+    }
+
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(prefersDark ? "dark" : "light");
 }
 
 
@@ -194,7 +314,7 @@ async function uploadProjectDoc() {
     }
 
     clearMessage();
-    setLoading(true, "Uploading project document", "Extracting text from the uploaded project file.");
+    setBusy(true);
 
     try {
         const formData = new FormData();
@@ -218,7 +338,7 @@ async function uploadProjectDoc() {
         projectDocStatus.className = "status-text error";
         showMessage(error.message, "error");
     } finally {
-        setLoading(false);
+        setBusy(false);
     }
 }
 
@@ -232,7 +352,7 @@ async function uploadKnowledgeDoc() {
     }
 
     clearMessage();
-    setLoading(true, "Indexing knowledge document", "Creating chunks, embeddings, and vector records.");
+    setBusy(true);
 
     try {
         const formData = new FormData();
@@ -252,7 +372,75 @@ async function uploadKnowledgeDoc() {
         knowledgeDocStatus.className = "status-text error";
         showMessage(error.message, "error");
     } finally {
-        setLoading(false);
+        setBusy(false);
+    }
+}
+
+
+async function createProposalJob(description) {
+    const response = await fetch(`${API_BASE}/generate-proposal-job`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            description,
+            project_docs: extractedProjectText
+        })
+    });
+
+    return parseResponse(response);
+}
+
+
+async function fetchProposalJob(jobId) {
+    const response = await fetch(`${API_BASE}/proposal-job/${jobId}`, {
+        method: "GET"
+    });
+
+    return parseResponse(response);
+}
+
+
+async function waitForProposalJob(jobId) {
+    let consecutiveFailures = 0;
+    const startedAt = Date.now();
+
+    for (;;) {
+        if (Date.now() - startedAt > JOB_MAX_WAIT_MS) {
+            throw new Error("Generation exceeded max wait time. Please retry.");
+        }
+
+        try {
+            const job = await fetchProposalJob(jobId);
+            if (consecutiveFailures > 0) {
+                clearMessage();
+            }
+            consecutiveFailures = 0;
+            updatePipelineFromJob(job);
+
+            if (job.status === "completed") {
+                return job.result;
+            }
+
+            if (job.status === "failed") {
+                throw new Error(job.error || "Proposal generation failed");
+            }
+
+            await sleep(JOB_POLL_INTERVAL_MS);
+        } catch (error) {
+            consecutiveFailures += 1;
+
+            if (consecutiveFailures >= JOB_POLL_MAX_RETRIES) {
+                throw error;
+            }
+
+            showMessage(
+                `Network unstable while tracking job. Retrying (${consecutiveFailures}/${JOB_POLL_MAX_RETRIES})...`,
+                "info"
+            );
+            await sleep(Math.min(5000, JOB_POLL_INTERVAL_MS * consecutiveFailures));
+        }
     }
 }
 
@@ -266,27 +454,17 @@ async function generateProposal() {
     }
 
     clearMessage();
+    setBusy(true);
+    startPipeline();
     downloadDocxLink.classList.add("hidden");
-    reviewStatus.textContent = "Generating...";
-    reviewSummary.className = "review-summary empty-state";
-    reviewSummary.textContent = "Review feedback will appear here.";
-    proposalOutput.className = "proposal-preview empty-state";
-    proposalOutput.textContent = "Generating proposal...";
-    setLoading(true, "Generating proposal", "Running the agent pipeline and preparing the DOCX file.");
+    reviewStatus.textContent = "Generating";
+    setReviewEmptyState();
+    setProposalEmptyState();
 
     try {
-        const response = await fetch(`${API_BASE}/generate-proposal`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                description,
-                project_docs: extractedProjectText
-            })
-        });
+        const createdJob = await createProposalJob(description);
+        const data = await waitForProposalJob(createdJob.job_id);
 
-        const data = await parseResponse(response);
         reviewStatus.textContent = data.review?.status || "Generated";
         renderReview(data.review);
         renderProposal(data.proposal);
@@ -300,17 +478,52 @@ async function generateProposal() {
         showMessage("Proposal generated successfully. The DOCX download is ready.", "success");
     } catch (error) {
         reviewStatus.textContent = "Failed";
-        reviewSummary.className = "review-summary empty-state";
-        reviewSummary.textContent = "Review feedback unavailable because generation failed.";
-        proposalOutput.className = "proposal-preview empty-state";
-        proposalOutput.textContent = "Proposal generation failed.";
+        setReviewEmptyState();
+        setProposalEmptyState();
         showMessage(error.message, "error");
     } finally {
-        setLoading(false);
+        stopPipeline();
+        setBusy(false);
     }
+}
+
+
+function onProjectDocSelected() {
+    const file = projectDocInput.files[0];
+    if (!file) {
+        projectDocStatus.textContent = "No project document uploaded.";
+        projectDocStatus.className = "status-text muted";
+        return;
+    }
+
+    projectDocStatus.textContent = `${file.name} selected.`;
+    projectDocStatus.className = "status-text muted";
+}
+
+
+function onKnowledgeDocSelected() {
+    const file = knowledgeDocInput.files[0];
+    if (!file) {
+        knowledgeDocStatus.textContent = "No knowledge-base document uploaded.";
+        knowledgeDocStatus.className = "status-text muted";
+        return;
+    }
+
+    knowledgeDocStatus.textContent = `${file.name} selected.`;
+    knowledgeDocStatus.className = "status-text muted";
 }
 
 
 uploadProjectDocBtn.addEventListener("click", uploadProjectDoc);
 uploadKnowledgeDocBtn.addEventListener("click", uploadKnowledgeDoc);
 generateProposalBtn.addEventListener("click", generateProposal);
+projectDocInput.addEventListener("change", onProjectDocSelected);
+knowledgeDocInput.addEventListener("change", onKnowledgeDocSelected);
+themeToggle.addEventListener("click", () => {
+    const activeTheme = htmlRoot.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    setTheme(activeTheme === "dark" ? "light" : "dark");
+});
+
+initializeTheme();
+setProposalEmptyState();
+setReviewEmptyState();

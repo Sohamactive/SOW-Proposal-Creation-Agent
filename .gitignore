@@ -10,3 +10,4 @@ __pycache__/
 backend/sample_docs/
 
 *.log
+.git
