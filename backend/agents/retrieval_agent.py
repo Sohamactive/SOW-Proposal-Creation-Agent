@@ -1,21 +1,18 @@
 # backend/agents/retrieval_agent.py
-
-
-
+import logging
 from backend.config import settings
 from backend.agents.project_state import ProjectState
 from backend.agents.llm_utils import generate_json
 from backend.rag.retrieval import retrieve_chunks
 from backend.genai_client import create_genai_client
 
-
+logger = logging.getLogger(__name__)
 client = create_genai_client()
-
 
 PROMPT_TEMPLATE = """
 You are an AI assistant generating search queries to retrieve relevant project knowledge.
 
-Generate 3–4 search queries that would retrieve useful examples of similar systems,
+Generate 3-4 search queries that would retrieve useful examples of similar systems,
 architectures, and delivery models.
 
 Return JSON.
@@ -31,58 +28,44 @@ domain: {project_domain}
 
 
 class RetrievalAgent:
-
     def run(self, project_state: ProjectState):
-
         state = project_state.get()
-
         problem_statement = state["project_info"]["problem_statement"]
         features = state["requirements"]["features"]
         domain = state["project_info"]["project_domain"]
-
+        logger.info("RetrievalAgent -> generating search queries (domain=%s)", domain)
         prompt = PROMPT_TEMPLATE.format(
             problem_statement=problem_statement,
             features=features,
             project_domain=domain
         )
-
         result = generate_json(client, prompt, list_key="queries")
-
         queries = [query for query in result.get("queries", []) if isinstance(query, str) and query.strip()]
-
+        logger.info("RetrievalAgent -> generated %d search queries", len(queries))
         retrieved_context = []
-
         for q in queries:
-            chunks = retrieve_chunks(q)
-            retrieved_context.extend(chunks)
-
-        # Simplified grouping (can be improved later)
+            try:
+                chunks = retrieve_chunks(q)
+                retrieved_context.extend(chunks)
+                logger.debug("RetrievalAgent -> query '%s' returned %d chunks", q[:60], len(chunks))
+            except Exception:
+                logger.warning("RetrievalAgent -> RAG retrieval failed for query '%s' (Qdrant may be offline), skipping", q[:60], exc_info=True)
+        logger.info("RetrievalAgent -> total retrieved chunks: %d", len(retrieved_context))
         similar_projects = []
         architecture_patterns = []
         challenge_examples = []
-
         for c in retrieved_context:
-
             text = c["text"]
-
             if "architecture" in text.lower():
                 architecture_patterns.append(text)
-
             elif "challenge" in text.lower():
                 challenge_examples.append(text)
-
             else:
                 similar_projects.append(text)
-
         context = {
             "similar_projects": similar_projects[:3],
             "architecture_patterns": architecture_patterns[:3],
             "challenge_examples": challenge_examples[:3]
         }
-
-        project_state.update({
-            "previous_experience": context["similar_projects"]
-        })
-
+        project_state.update({"previous_experience": context["similar_projects"]})
         return context
-

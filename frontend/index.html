@@ -3,32 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI SOW Proposal Generator</title>
+    <meta name="description" content="AI-powered SOW Proposal Generator — turn project briefs into professional Statements of Work with multi-agent AI analysis, quality review, and DOCX export.">
+    <title>SOW Intelligence — AI Proposal Generator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/frontend/style.css">
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <p class="app-mark">SOW Intelligence</p>
-            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-                <span id="themeIcon" role="img" aria-label="Switch theme">&#9789;</span>
-            </button>
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
+                        <rect x="2" y="4" width="16" height="20" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <rect x="10" y="4" width="16" height="20" rx="2" stroke="currentColor" stroke-width="2" opacity="0.4"/>
+                        <path d="M6 10h8M6 14h6M6 18h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <p class="app-mark">SOW Intelligence</p>
+            </div>
+            <div class="topbar-actions">
+                <span class="version-badge">v1.0</span>
+                <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+                    <span id="themeIcon" role="img" aria-label="Switch theme">&#9789;</span>
+                </button>
+            </div>
         </div>
     </header>
 
     <main class="page-shell">
         <section class="hero" aria-labelledby="hero-title">
-            <p class="eyebrow">AI Document Intelligence</p>
-            <h1 id="hero-title">Turn briefs into professional proposals</h1>
-            <p class="hero-subtext">Capture project context, run a multi-step AI workflow, and export a client-ready Statement of Work with auditable review signals.</p>
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                AI-Powered Document Intelligence
+            </div>
+            <h1 id="hero-title">Turn briefs into<br><em>professional proposals</em></h1>
+            <p class="hero-subtext">Capture project context, run a multi-agent AI workflow, and export a client-ready Statement of Work — complete with quality review signals.</p>
+            <div class="hero-stats">
+                <div class="stat-chip">
+                    <span class="stat-number">7</span>
+                    <span class="stat-label">AI Agents</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-number">12</span>
+                    <span class="stat-label">Proposal Sections</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-number">&lt;2m</span>
+                    <span class="stat-label">Generation Time</span>
+                </div>
+            </div>
         </section>
 
         <section class="workspace-grid" aria-label="Proposal workspace">
             <section class="card form-card" aria-labelledby="input-card-title">
                 <div class="card-head">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="20" height="20" fill="none">
+                            <path d="M4 2h8l4 4v12H4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                            <path d="M12 2v4h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
                     <h2 id="input-card-title">Project Input</h2>
                     <p>Provide description and documents for high-fidelity generation.</p>
                 </div>
@@ -36,7 +72,8 @@
                 <form class="input-form" novalidate>
                     <div class="field-group">
                         <label for="project_input">Project description</label>
-                        <textarea id="project_input" placeholder="Describe scope, deliverables, constraints, timeline, and assumptions."></textarea>
+                        <textarea id="project_input" placeholder="Describe scope, deliverables, constraints, timeline, and assumptions…"></textarea>
+                        <span class="field-hint">The more detail you provide, the better the proposal.</span>
                     </div>
 
                     <section class="field-group" aria-labelledby="project-doc-title">
@@ -44,13 +81,24 @@
                             <h3 id="project-doc-title">Project Document</h3>
                             <p>Upload RFP, requirements, or meeting notes.</p>
                         </div>
-                        <label for="projectDoc" class="upload-zone">
-                            <span class="upload-icon" role="img" aria-label="Upload file">&#8679;</span>
+                        <label for="projectDoc" class="upload-zone" id="projectDocZone">
+                            <span class="upload-icon" role="img" aria-label="Upload file">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                                    <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                             <span class="upload-text">Click to upload or drag and drop</span>
-                            <span class="upload-subtext">PDF or DOCX</span>
+                            <span class="upload-subtext">PDF or DOCX &bull; Max 10MB</span>
                         </label>
                         <input type="file" id="projectDoc" class="visually-hidden-file" accept=".pdf,.docx">
-                        <button id="uploadProjectDocBtn" class="button-secondary" type="button">Upload Project Document</button>
+                        <button id="uploadProjectDocBtn" class="button-secondary" type="button">
+                            <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                                <path d="M8 12V2m0 0L4 6m4-4l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            Upload Project Document
+                        </button>
                         <p id="projectDocStatus" class="status-text muted">No project document uploaded.</p>
                     </section>
 
@@ -59,20 +107,39 @@
                             <h3 id="knowledge-doc-title">Knowledge Base Document</h3>
                             <p>Upload prior SOWs or reusable implementation references.</p>
                         </div>
-                        <label for="knowledgeDoc" class="upload-zone">
-                            <span class="upload-icon" role="img" aria-label="Upload file">&#8679;</span>
+                        <label for="knowledgeDoc" class="upload-zone" id="knowledgeDocZone">
+                            <span class="upload-icon" role="img" aria-label="Upload file">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                                    <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                             <span class="upload-text">Click to upload or drag and drop</span>
-                            <span class="upload-subtext">PDF or DOCX</span>
+                            <span class="upload-subtext">PDF or DOCX &bull; Max 10MB</span>
                         </label>
                         <input type="file" id="knowledgeDoc" class="visually-hidden-file" accept=".pdf,.docx">
-                        <button id="uploadKnowledgeDocBtn" class="button-secondary" type="button">Upload Knowledge Document</button>
+                        <button id="uploadKnowledgeDocBtn" class="button-secondary" type="button">
+                            <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                                <path d="M8 12V2m0 0L4 6m4-4l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            Upload Knowledge Document
+                        </button>
                         <p id="knowledgeDocStatus" class="status-text muted">No knowledge-base document uploaded.</p>
                     </section>
 
                     <div class="action-row">
-                        <button id="generateProposalBtn" class="button-primary" type="button">Generate Proposal</button>
+                        <button id="generateProposalBtn" class="button-primary" type="button">
+                            <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                                <path d="M10 2l2.5 5.5L18 10l-5.5 2.5L10 18l-2.5-5.5L2 10l5.5-2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                            </svg>
+                            Generate Proposal
+                        </button>
                         <a id="downloadDocxLink" class="button-download hidden" href="#" download>
-                            <span role="img" aria-label="Download document">&#8595;</span>
+                            <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                                <path d="M8 2v10m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M2 12v2h12v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
                             Download DOCX
                         </a>
                     </div>
@@ -81,6 +148,11 @@
 
             <section class="card output-card" aria-labelledby="output-card-title">
                 <div class="card-head output-head">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="20" height="20" fill="none">
+                            <path d="M10 2l2.5 5.5L18 10l-5.5 2.5L10 18l-2.5-5.5L2 10l5.5-2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
                     <h2 id="output-card-title">Proposal Output</h2>
                     <p>Preview structured proposal sections and QA signals.</p>
                 </div>
@@ -109,6 +181,7 @@
                     <div class="pipeline-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                         <div id="pipelineProgress" class="pipeline-bar"></div>
                     </div>
+                    <p id="pipelineStepLabel" class="pipeline-current-label"></p>
                 </section>
 
                 <section id="reviewSummary" class="review-summary empty-state-panel" aria-label="Quality review summary">
@@ -132,6 +205,10 @@
             </section>
         </section>
     </main>
+
+    <footer class="site-footer">
+        <p>Built with multi-agent AI &bull; Powered by Gemini</p>
+    </footer>
 
     <script src="/frontend/app.js"></script>
 </body>

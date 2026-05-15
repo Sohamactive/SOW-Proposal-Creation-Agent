@@ -1,15 +1,12 @@
 # backend/agents/risk_agent.py
-
-
-
+import logging
 from backend.config import settings
 from backend.agents.project_state import ProjectState
 from backend.agents.llm_utils import generate_json
 from backend.genai_client import create_genai_client
 
-
+logger = logging.getLogger(__name__)
 client = create_genai_client()
-
 
 PROMPT_TEMPLATE = """
 You are analyzing a software project proposal.
@@ -25,24 +22,13 @@ Project Information:
 
 
 class RiskAssumptionAgent:
-
     def run(self, project_state: ProjectState):
-
         state = project_state.get()
-
-        prompt = PROMPT_TEMPLATE.format(
-            project_state=state
-        )
-
+        logger.info("RiskAgent -> analyzing risks and assumptions")
+        prompt = PROMPT_TEMPLATE.format(project_state=state)
         result = generate_json(client, prompt)
-
         assumptions = result.get("assumptions", [])
         risks = result.get("risks", [])
-
-        project_state.update({
-            "assumptions": assumptions,
-            "risks": risks
-        })
-
+        project_state.update({"assumptions": assumptions, "risks": risks})
+        logger.info("RiskAgent -> done (risks=%d, assumptions=%d)", len(risks), len(assumptions))
         return result
-

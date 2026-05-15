@@ -1,15 +1,12 @@
 # backend/agents/requirement_agent.py
-
-
-
+import logging
 from backend.config import settings
 from backend.agents.project_state import ProjectState
 from backend.agents.llm_utils import generate_json
 from backend.genai_client import create_genai_client
 
-
+logger = logging.getLogger(__name__)
 client = create_genai_client()
-
 
 PROMPT_TEMPLATE = """
 You are an AI assistant helping a project manager understand a client's project request.
@@ -35,28 +32,15 @@ Project Description:
 
 
 class RequirementUnderstandingAgent:
-
-    def run(
-        self,
-        project_state: ProjectState,
-        client_input: str,
-        rfp_text: str = "",
-        meeting_notes: str = ""
-    ):
-
+    def run(self, project_state: ProjectState, client_input: str, rfp_text: str = "", meeting_notes: str = ""):
+        logger.info("RequirementAgent -> starting (input_length=%d)", len(client_input))
         combined_input = client_input
-
         if rfp_text:
             combined_input += "\n\nRFP:\n" + rfp_text
-
         if meeting_notes:
             combined_input += "\n\nMeeting Notes:\n" + meeting_notes
-
         prompt = PROMPT_TEMPLATE.format(client_input=combined_input)
-
         result = generate_json(client, prompt)
-
-        # Update project state
         project_state.update({
             "project_info": {
                 "problem_statement": result.get("problem_statement", ""),
@@ -71,6 +55,5 @@ class RequirementUnderstandingAgent:
                 "target_users": result.get("target_users", [])
             }
         })
-
+        logger.info("RequirementAgent -> done (domain=%s, features=%d)", result.get("project_domain", "?"), len(result.get("features", [])))
         return result
-
