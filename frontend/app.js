@@ -19,6 +19,9 @@ const loader = document.getElementById("loader");
 const reviewStatus = document.getElementById("reviewStatus");
 const projectDocExtracted = document.getElementById("projectDocExtracted");
 const downloadDocxLink = document.getElementById("downloadDocxLink");
+const downloadBar = document.getElementById("downloadBar");
+const downloadDocxOutputLink = document.getElementById("downloadDocxOutputLink");
+const downloadBarFilename = document.getElementById("downloadBarFilename");
 const reviewSummary = document.getElementById("reviewSummary");
 const pipelineProgress = document.getElementById("pipelineProgress");
 const pipelineTrack = loader.querySelector(".pipeline-track");
@@ -340,6 +343,7 @@ async function generateProposal() {
     }
     clearMessage(); setBusy(true); startPipeline();
     downloadDocxLink.classList.add("hidden");
+    downloadBar.classList.add("hidden");
     reviewStatus.textContent = "Generating";
     setReviewEmptyState(); setProposalEmptyState();
     try {
@@ -349,9 +353,15 @@ async function generateProposal() {
         renderReview(data.review);
         renderProposal(data.proposal);
         if (data.files?.docx_download_url) {
-            downloadDocxLink.href = `${API_BASE}${data.files.docx_download_url}`;
-            downloadDocxLink.download = data.files.docx_name || "proposal.docx";
+            const downloadUrl = `${API_BASE}${data.files.docx_download_url}`;
+            const fileName = data.files.docx_name || "proposal.docx";
+            downloadDocxLink.href = downloadUrl;
+            downloadDocxLink.download = fileName;
             downloadDocxLink.classList.remove("hidden");
+            downloadDocxOutputLink.href = downloadUrl;
+            downloadDocxOutputLink.download = fileName;
+            downloadBarFilename.textContent = fileName;
+            downloadBar.classList.remove("hidden");
         }
         showMessage("Proposal generated successfully. The DOCX download is ready.", "success");
     } catch (error) {

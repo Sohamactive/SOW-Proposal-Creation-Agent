@@ -16,7 +16,6 @@ Based on the system architecture and project requirements, define a delivery pla
 Include:
 
 - project timeline
-- Topcoder challenge structure
 - team roles
 - deliverables
 
